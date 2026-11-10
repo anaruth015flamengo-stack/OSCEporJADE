@@ -10,7 +10,7 @@
   <div class="ai-controls"><button class="primary" id="aiSend">Enviar</button><button id="aiGrade">Encerrar e corrigir com IA</button><button id="aiReset">Limpar conversa</button></div>
   <details><summary>Imagem ou ECG para discutir</summary><p class="small muted">Envie somente imagens de estudo sem identificação de pacientes. Ao enviar uma mensagem, a imagem anexada será encaminhada à IA. A interpretação é de treino e pode conter erros.</p><input id="aiImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Anexar exame"><div id="aiAttachmentPreview"></div><button id="aiRemoveImage">Remover anexo</button><div id="aiECG"></div></details>
   <p id="aiStatus" class="small" role="status"></p><div id="aiReview"></div>
-  <details><summary>Conexão do assistente</summary><p class="small">O acesso da IA é configurado no servidor. Nunca coloque uma chave da OpenAI aqui. A senha abaixo é apenas a senha de acesso ao seu assistente.</p><label>Endereço do servidor <input id="aiEndpoint" type="url" placeholder="https://seu-servidor.example"></label><label> Senha de acesso <input id="aiPassword" type="password" autocomplete="off"></label><button id="aiConnect">Verificar conexão</button></details>`;
+  <details><summary>Conexão do assistente</summary><p class="small">O acesso da IA é configurado no servidor. Nunca coloque a chave da API da Anthropic aqui. A senha abaixo é apenas a senha de acesso ao seu assistente.</p><label>Endereço do servidor <input id="aiEndpoint" type="url" placeholder="https://seu-servidor.example"></label><label> Senha de acesso <input id="aiPassword" type="password" autocomplete="off"></label><button id="aiConnect">Verificar conexão</button></details>`;
   document.getElementById('station').append(panel);
   const el=id=>document.getElementById(id);
   let messages=[],attachment=null,busy=false,generation=0,controller=null;
@@ -32,7 +32,7 @@
     try{
       const history=pending?[...messages,pending]:messages;
       const observations=[...visited].map(i=>'Pergunta realizada no simulador: '+active.answers[i][0]+' / resposta: '+active.answers[i][1]).concat([...requested].map(i=>'Exame solicitado: '+active.exams[i][0]+' / resultado: '+active.exams[i][1]));
-      const r=await fetch(root+'/api/osce',{method:'POST',headers:headers(),signal:controller.signal,body:JSON.stringify({caseId:active.id,mode:el('aiMode').value,action,messages:history,diagnosis:el('diagnosis').value,management:el('management').value,observations,criteria:rubrics()})});
+      const r=await fetch(root+'/api/osce',{method:'POST',headers:headers(),signal:controller.signal,body:JSON.stringify({caseId:active.id,caseData:{name:active.name,area:active.area,patient:active.patient,chief:active.chief,answers:active.answers,exams:active.exams,points:active.points,answer:active.answer},mode:el('aiMode').value,action,messages:history,diagnosis:el('diagnosis').value,management:el('management').value,observations,criteria:rubrics()})});
       const data=await r.json();if(!r.ok)throw Error(data.error||'Não foi possível obter resposta.');if(token!==generation)return;
       if(pending){messages.push(pending);bubble('user',text+(attachment?'\n[Imagem de estudo anexada]':''));el('aiText').value='';attachment=null;el('aiImage').value='';el('aiAttachmentPreview').replaceChildren();}
       messages.push({role:'assistant',text:data.message});bubble('assistant',data.message);if(action==='grade')review(data);status('Resposta recebida.');el('aiBadge').textContent='IA conectada';
